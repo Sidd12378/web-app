@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Building Plan Editor</title>
+    <style>
+        /* CSS styles for the toolbar and canvas */
+        #toolbar {
+            margin-bottom: 10px;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            cursor: crosshair;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="toolbar">
+            <button @click="setCurrentTool('drawLine')">Draw Line</button>
+            <button @click="setCurrentTool('drawRect')">Draw Rectangle</button>
+            <button @click="setCurrentTool('drawCircle')">Draw Circle</button>
+            <button @click="setCurrentTool('select')">Select</button>
+            <button @click="toggleAnnotations">View Annotations</button>
+        </div>
+        <canvas id="drawingArea" width="800" height="600" @mousedown="startDrawing"
+                @mousemove="draw" @mouseup="endDrawing"></canvas>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script>
+        const app = new Vue({
+            el: '#app',
+            data: {
+                currentTool: '',
+                drawing: false,
+                shapes: [],
+                annotationsVisible: false,
+                canvas: null,
+                ctx: null,
+                startX: 0,
+                startY: 0
+            },
+            mounted() {
+                this.canvas = document.getElementById('drawingArea');
+                this.ctx = this.canvas.getContext('2d');
+            },
+            methods: {
+                setCurrentTool(tool) {
+                    this.currentTool = tool;
+                    if (tool === 'select') {
+                        this.canvas.style.cursor = 'default';
+                    } else {
+                        this.canvas.style.cursor = 'crosshair';
+                    }
+                },
+                toggleAnnotations() {
+                    this.annotationsVisible = !this.annotationsVisible;
+                    if (this.annotationsVisible) {
+                        this.drawShapes();
+                    } else {
+                        this.clearCanvas();
+                    }
+                },
+                startDrawing(event) {
+                    this.drawing = true;
+                    this.startX = event.offsetX;
+                    this.startY = event.offsetY;
+                },
+                draw(event) {
+                    if (!this.drawing) return;
+                    const mouseX = event.offsetX;
+                    const mouseY = event.offsetY;
+                    this.clearCanvas();
+                    if (this.currentTool === 'drawLine') {
+                        this.drawLine(this.startX, this.startY, mouseX, mouseY);
+                    } else if (this.currentTool === 'drawRect') {
+                        this.drawRect(this.startX, this.startY, mouseX - this.startX, mouseY - this.startY);
+                    } else if (this.currentTool === 'drawCircle') {
+                        const radius = Math.sqrt(Math.pow(mouseX - this.startX, 2) + Math.pow(mouseY - this.startY, 2));
+                        this.drawCircle(this.startX, this.startY, radius);
+                    }
+                },
+                endDrawing(event) {
+                    if (!this.drawing) return;
+                    this.drawing = false;
+                    const endX = event.offsetX;
+                    const endY = event.offsetY;
+                    const shape = {
+                        type: this.currentTool,
+                        x: this.startX,
+                        y: this.startY,
+                        width: endX - this.startX,
+                        height: endY - this.startY,
+                        radius: Math.sqrt(Math.pow(endX - this.startX, 2) + Math.pow(endY - this.startY, 2)),
+                        annotation: ''
+                    };
+                    this.shapes.push(shape);
+                },
+                drawShapes() {
+                    this.shapes.forEach(shape => {
+                        if (shape.type === 'drawLine') {
+                            this.drawLine(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height);
+                        } else if (shape.type === 'drawRect') {
+                            this.drawRect(shape.x, shape.y, shape.width, shape.height);
+                        } else if (shape.type === 'drawCircle') {
+                            this.drawCircle(shape.x, shape.y, shape.radius);
+                        }
+                        if (this.annotationsVisible && shape.annotation) {
+                            this.ctx.fillText(shape.annotation, shape.x, shape.y - 5);
+                        }
+                    });
+                },
+                clearCanvas() {
+                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                },
+                drawLine(x1, y1, x2, y2) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x1, y1);
+                    this.ctx.lineTo(x2, y2);
+                    this.ctx.stroke();
+                },
+                drawRect(x, y, width, height) {
+                    this.ctx.beginPath();
+                    this.ctx.rect(x, y, width, height);
+                    this.ctx.stroke();
+                },
+                drawCircle(x, y, radius) {
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, radius, 0, 2 * Math.PI);
+                    this.ctx.stroke();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
