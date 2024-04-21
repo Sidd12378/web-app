@@ -11,12 +11,13 @@
         }
         canvas {
             border: 1px solid #ccc;
-            cursor: crosshair;
+            cursor: crosshair; /* Set cursor to crosshair when hovering over the canvas */
         }
     </style>
 </head>
 <body>
     <div id="app">
+        <!-- Toolbar containing drawing tools -->
         <div id="toolbar">
             <button @click="setCurrentTool('drawLine')">Draw Line</button>
             <button @click="setCurrentTool('drawRect')">Draw Rectangle</button>
@@ -24,55 +25,65 @@
             <button @click="setCurrentTool('select')">Select</button>
             <button @click="toggleAnnotations">View Annotations</button>
         </div>
+        <!-- Canvas for drawing -->
         <canvas id="drawingArea" width="800" height="600" @mousedown="startDrawing"
                 @mousemove="draw" @mouseup="endDrawing"></canvas>
     </div>
 
+    <!-- Vue.js script -->
     <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
     <script>
         const app = new Vue({
             el: '#app',
             data: {
-                currentTool: '',
-                drawing: false,
-                shapes: [],
-                annotationsVisible: false,
-                canvas: null,
-                ctx: null,
-                startX: 0,
-                startY: 0
+                currentTool: '', // Current selected drawing tool
+                drawing: false, // Indicates if currently drawing
+                shapes: [], // Array to store drawn shapes
+                annotationsVisible: false, // Flag to toggle visibility of annotations
+                canvas: null, // Reference to the canvas element
+                ctx: null, // Context of the canvas for drawing
+                startX: 0, // Start X coordinate of drawing
+                startY: 0 // Start Y coordinate of drawing
             },
             mounted() {
+                // Initialize canvas and context
                 this.canvas = document.getElementById('drawingArea');
                 this.ctx = this.canvas.getContext('2d');
             },
             methods: {
+                // Method to set the current drawing tool
                 setCurrentTool(tool) {
                     this.currentTool = tool;
+                    // Change cursor style based on the selected tool
                     if (tool === 'select') {
                         this.canvas.style.cursor = 'default';
                     } else {
                         this.canvas.style.cursor = 'crosshair';
                     }
                 },
+                // Method to toggle visibility of annotations
                 toggleAnnotations() {
                     this.annotationsVisible = !this.annotationsVisible;
+                    // Redraw shapes with annotations if visible
                     if (this.annotationsVisible) {
                         this.drawShapes();
                     } else {
-                        this.clearCanvas();
+                        this.clearCanvas(); // Clear canvas if annotations are hidden
                     }
                 },
+                // Method to handle mouse down event for starting drawing
                 startDrawing(event) {
                     this.drawing = true;
                     this.startX = event.offsetX;
                     this.startY = event.offsetY;
                 },
+                // Method to handle mouse move event for drawing shapes
                 draw(event) {
                     if (!this.drawing) return;
                     const mouseX = event.offsetX;
                     const mouseY = event.offsetY;
-                    this.clearCanvas();
+                    this.clearCanvas(); // Clear canvas before drawing each frame
+                    // Draw shapes based on the current drawing tool
                     if (this.currentTool === 'drawLine') {
                         this.drawLine(this.startX, this.startY, mouseX, mouseY);
                     } else if (this.currentTool === 'drawRect') {
@@ -82,11 +93,13 @@
                         this.drawCircle(this.startX, this.startY, radius);
                     }
                 },
+                // Method to handle mouse up event for ending drawing
                 endDrawing(event) {
                     if (!this.drawing) return;
                     this.drawing = false;
                     const endX = event.offsetX;
                     const endY = event.offsetY;
+                    // Create a shape object and push it to the shapes array
                     const shape = {
                         type: this.currentTool,
                         x: this.startX,
@@ -94,10 +107,11 @@
                         width: endX - this.startX,
                         height: endY - this.startY,
                         radius: Math.sqrt(Math.pow(endX - this.startX, 2) + Math.pow(endY - this.startY, 2)),
-                        annotation: ''
+                        annotation: '' // Placeholder for annotation text
                     };
                     this.shapes.push(shape);
                 },
+                // Method to draw shapes on the canvas
                 drawShapes() {
                     this.shapes.forEach(shape => {
                         if (shape.type === 'drawLine') {
@@ -107,25 +121,30 @@
                         } else if (shape.type === 'drawCircle') {
                             this.drawCircle(shape.x, shape.y, shape.radius);
                         }
+                        // Draw annotation text if annotations are visible
                         if (this.annotationsVisible && shape.annotation) {
                             this.ctx.fillText(shape.annotation, shape.x, shape.y - 5);
                         }
                     });
                 },
+                // Method to clear the canvas
                 clearCanvas() {
                     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
                 },
+                // Method to draw a line on the canvas
                 drawLine(x1, y1, x2, y2) {
                     this.ctx.beginPath();
                     this.ctx.moveTo(x1, y1);
                     this.ctx.lineTo(x2, y2);
                     this.ctx.stroke();
                 },
+                // Method to draw a rectangle on the canvas
                 drawRect(x, y, width, height) {
                     this.ctx.beginPath();
                     this.ctx.rect(x, y, width, height);
                     this.ctx.stroke();
                 },
+                // Method to draw a circle on the canvas
                 drawCircle(x, y, radius) {
                     this.ctx.beginPath();
                     this.ctx.arc(x, y, radius, 0, 2 * Math.PI);
@@ -136,3 +155,4 @@
     </script>
 </body>
 </html>
+
